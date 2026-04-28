@@ -9,6 +9,7 @@ import {
   Lock, Unlock, ChevronRight, Activity, Cpu
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { HISTORICAL_EVENTS } from './events';
 
 const App = () => {
   // --- UI 狀態 ---
@@ -27,51 +28,8 @@ const App = () => {
   const [insiderInfo, setInsiderInfo] = useState<string | null>(null);
   const [lastRoundResult, setLastRoundResult] = useState<{ scenario: string, return: number } | null>(null);
 
-  // --- 市場事件 (預設可選事件) ---
-  const [events, setEvents] = useState([
-    {
-      id: 1,
-      name: "量子計算突破",
-      desc: "高科技領域生產力大升，但加密貨幣面臨安全挑戰。",
-      alpha: 0.1,
-      impact: { stocks: 0.15, bonds: -0.02, crypto: -0.15 },
-      volatility: { stocks: 0.05, bonds: 0.01, crypto: 0.2 },
-      violation: { trigger: "crypto", threshold: 60, penalty: 0.1, msg: "監管機構對高風險資產展開調查。" }
-    },
-    {
-      id: 2,
-      name: "全球通膨飆升",
-      desc: "大宗商品大漲，央行激進加息壓制經濟。",
-      alpha: 0.2,
-      impact: { stocks: -0.12, bonds: 0.04, crypto: -0.30 },
-      volatility: { stocks: 0.08, bonds: 0.02, crypto: 0.15 },
-      violation: { trigger: "leverage", threshold: 1.5, penalty: 0.05, msg: "高槓桿遭流動性緊縮懲罰。" }
-    },
-    {
-      id: 3,
-      name: "穩健復甦期",
-      desc: "低失業率與穩定增長齊頭並進，市場波動降低。",
-      alpha: 0.05,
-      impact: { stocks: 0.08, bonds: 0.02, crypto: 0.10 },
-      volatility: { stocks: 0.03, bonds: 0.01, crypto: 0.08 },
-    },
-    {
-      id: 4,
-      name: "地緣摩擦加劇",
-      desc: "國際貿易受到威脅，避險資金逃往傳統債券。",
-      alpha: 0.15,
-      impact: { stocks: -0.10, bonds: 0.08, crypto: -0.12 },
-      volatility: { stocks: 0.07, bonds: 0.02, crypto: 0.12 },
-    },
-    {
-      id: 5,
-      name: "技術革命爆發",
-      desc: "新型能源與傳播技術普及，股市迎来增長潮。",
-      alpha: 0.1,
-      impact: { stocks: 0.12, bonds: 0.01, crypto: 0.05 },
-      volatility: { stocks: 0.04, bonds: 0.01, crypto: 0.06 },
-    }
-  ]);
+  // --- 市場事件 ---
+  const [events] = useState(HISTORICAL_EVENTS);
 
   // --- 計算邏輯 ---
   const totalWeight = useMemo(() => weights.stocks + weights.bonds + weights.crypto, [weights]);
@@ -180,8 +138,18 @@ const App = () => {
       setEventProbs(nextProbs);
     } else if (selectedEventIds.length < 3) {
       setSelectedEventIds([...selectedEventIds, id]);
-      setEventProbs({ ...eventProbs, [id]: 0 });
+      setEventProbs({ ...eventProbs, [id]: 33 }); // 預設 33% 左右
     }
+  };
+
+  const handleRandomSelect = () => {
+    const shuffled = [...events].sort(() => 0.5 - Math.random());
+    const selected = shuffled.slice(0, 3);
+    const ids = selected.map(e => e.id);
+    setSelectedEventIds(ids);
+    const probs: Record<number, number> = {};
+    ids.forEach(id => probs[id] = 33);
+    setEventProbs(probs);
   };
 
   const handleWeightChange = (key: string, val: string) => {
@@ -320,15 +288,24 @@ const App = () => {
                   initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
                   className="bg-white border border-slate-200 rounded-2xl p-8 space-y-6"
                 >
-                  <div className="flex items-center gap-3">
-                    <Settings className="text-slate-400" size={18} />
-                    <h2 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.3em]">市場結算系統 (混合事件模式)</h2>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Settings className="text-slate-400" size={18} />
+                      <h2 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.3em]">市場結算系統 (混合事件模式)</h2>
+                    </div>
+                    <button 
+                      onClick={handleRandomSelect}
+                      className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors text-[9px] font-bold uppercase tracking-wider"
+                    >
+                      <Sparkles size={12} />
+                      隨機抽取
+                    </button>
                   </div>
                   
                   <div className="space-y-6">
                     <div>
                       <h3 className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-3">步驟 1: 選擇三個標的事件 ({selectedEventIds.length}/3)</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[300px] overflow-y-auto p-1 custom-scrollbar">
                         {events.map(e => {
                           const isSelected = selectedEventIds.includes(e.id);
                           return (
